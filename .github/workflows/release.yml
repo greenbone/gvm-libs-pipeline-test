@@ -18,9 +18,9 @@ on:
 
 permissions:
   contents: read
-  packages: read
+  packages: write
   id-token: write
-  pull-requests: read
+  pull-requests: write
 
 jobs:
   build-and-release:
