@@ -19,7 +19,7 @@ on:
 permissions:
   contents: read
   packages: read
-  id-token: read
+  id-token: write
   pull-requests: read
 
 jobs:
