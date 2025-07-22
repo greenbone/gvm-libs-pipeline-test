@@ -87,3 +87,4 @@ jobs:
           token: ${{ secrets.GREENBONE_BOT_TOKEN }}
           repository: "greenbone/gea-experiments"
           workflow: development-packaging.yml
+          inputs: '"upstream-version": "${{ steps.release-version.outputs.release-version }}"'
