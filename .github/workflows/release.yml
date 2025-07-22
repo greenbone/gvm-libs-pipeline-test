@@ -16,6 +16,12 @@ on:
         type: string
         description: Set an explicit version, that will overwrite release-type. Fails if version is not compliant.
 
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+  pull-requests: write
+
 jobs:
   build-and-release:
     name: Create a new release
