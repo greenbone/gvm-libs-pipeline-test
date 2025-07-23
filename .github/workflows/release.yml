@@ -45,12 +45,14 @@ jobs:
         uses: greenbone/actions/release-type@v3
         with:
           release-type-input: ${{ inputs.release-type }}
+
       - name: Checkout code
         uses: actions/checkout@v6
         with:
           fetch-depth: 0 # for conventional commits and getting all git tags
           persist-credentials: false
           ref: ${{ steps.release-type.outputs.release-ref }}
+
       - name: Determine release version
         id: release-version
         uses: greenbone/actions/release-version@v3
@@ -58,16 +60,19 @@ jobs:
           release-type: ${{ steps.release-type.outputs.release-type }}
           release-version: ${{ inputs.release-version }}
           versioning-scheme: "semver"
+
       - name: Install git-cliff
         uses: greenbone/actions/uv@v3
         with:
           install: git-cliff
+
       - name: Determine changelog
         env:
           GITHUB_REPO: ${{ github.repository }}
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           git-cliff -v --strip header -o /tmp/changelog.md --unreleased --tag ${{ steps.release-version.outputs.release-version }} ${{ steps.release-version.outputs.last-release-version }}..HEAD
+
       - name: Release with release action
         id: release
         uses: greenbone/actions/release@v3
@@ -83,10 +88,6 @@ jobs:
           ref: ${{ steps.release-type.outputs.release-ref }}
           versioning-scheme: "semver"
 
-  trigger-development-packaging-pipeline:
-    needs: [ build-and-release ]
-    runs-on: ubuntu-latest
-    steps:
       - name: Trigger development-packaging workflow
         uses: greenbone/actions/trigger-workflow@487dab5354ace3dd575c8cf100a3e522c1dd3a79
         with:
