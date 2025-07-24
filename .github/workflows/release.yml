@@ -95,3 +95,4 @@ jobs:
           repository: "greenbone/gea-experiments"
           workflow: development-packaging.yml
           inputs: '{"upstream-version": "${{ steps.release-version.outputs.release-version }}"}'
+          wait-for-completion-timeout: 10000
