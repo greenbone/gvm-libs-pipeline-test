@@ -92,7 +92,7 @@ jobs:
         uses: greenbone/actions/trigger-workflow@487dab5354ace3dd575c8cf100a3e522c1dd3a79
         with:
           token: ${{ secrets.GREENBONE_BOT_TOKEN }}
-          repository: "greenbone/gea-experiments"
+          repository: "greenbone/gea-pipeline"
           workflow: development-packaging.yml
           inputs: '{"upstream-version": "${{ steps.release-version.outputs.release-version }}"}'
           wait-for-completion-timeout: 10000
