@@ -93,7 +93,7 @@ jobs:
         with:
           token: ${{ secrets.GREENBONE_BOT_TOKEN }}
           repository: "greenbone/gea-pipeline"
-          ref: "DEVOPS-1735_clean-iso-build-setup"
+          ref: "DEVOPS-1734_create_the_workflows"
           workflow: development-packaging.yml
-          inputs: '{"upstream-version": "${{ steps.release-version.outputs.release-version }}"}'
+          inputs: '{"upstream-version": "${{ steps.release-version.outputs.release-version }}", "component-repo-name-to-package": "${{GITHUB_REPOSITORY}}"}'
           wait-for-completion-timeout: 10000
