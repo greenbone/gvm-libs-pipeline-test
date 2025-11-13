@@ -54,5 +54,5 @@ jobs:
           repository: "greenbone/gea-pipeline"
           ref: "DEVOPS-1734_create_the_workflows"
           workflow: development-packaging.yml
-          inputs: '{"upstream-version": "${{ github.event.release.name }}", "component-repo-name-to-package": "blabla"}'
+          inputs: '{"upstream-version": "${{ github.event.release.name }}", "component-repo-name-to-package": "${{ github.repository }}"}'
           wait-for-completion-timeout: 10000
