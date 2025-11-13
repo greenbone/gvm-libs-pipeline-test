@@ -45,3 +45,14 @@ jobs:
       status: ${{ contains(needs.*.result, 'failure') && 'failure' || 'success' }}
       channel: gea-pipeline-notifications
     secrets: inherit
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: Trigger development-packaging workflow
+        uses: greenbone/actions/trigger-workflow@487dab5354ace3dd575c8cf100a3e522c1dd3a79
+        with:
+          token: ${{ secrets.GREENBONE_BOT_TOKEN }}
+          repository: "greenbone/gea-pipeline"
+          ref: "DEVOPS-1734_create_the_workflows"
+          workflow: development-packaging.yml
+          inputs: '{"upstream-version": "${{ steps.release-version.outputs.release-version }}", "component-repo-name-to-package": "${{env.GITHUB_REPOSITORY}}"}'
+          wait-for-completion-timeout: 10000
