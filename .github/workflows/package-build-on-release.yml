@@ -13,7 +13,13 @@ jobs:
   call_packaging_workflow:
     name: Call Packaging workflow
     runs-on: "ubuntu-latest"   
-    steps:  
+    steps:
+      - name: Info summary
+        shell: bash
+        run: |
+          echo "Summarizing info:"
+          echo "going to trigger package workflow with"
+          echo '{"upstream-version": "${{ github.event.release.name }}", "component-repo-name-to-package": "${{ github.repository }}"}'
       - name: Trigger development-packaging workflow
         uses: greenbone/actions/trigger-workflow@487dab5354ace3dd575c8cf100a3e522c1dd3a79
         with:
