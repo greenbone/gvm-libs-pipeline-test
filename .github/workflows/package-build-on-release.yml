@@ -20,7 +20,9 @@ jobs:
           # We can get the version here either from the tag or the name of the release entity in the 
           # webhook data of the triggering event here... both are not the plain version that we need.
           # So we extract the version to hand it over to the packaging process.                   
-          released_version="$(echo "${{ github.event.release.name }}" | cut -d\  -f2)          
+          released_version="$(echo "${{ github.event.release.name }}" | cut -d\  -f2)
+          echo "identified released version: ${released_version}"
+          sleep 1
           echo RELEASED_VERSION="${released_version}" >> "$GITHUB_ENV"
       - name: Trigger development-packaging workflow
         uses: greenbone/actions/trigger-workflow@487dab5354ace3dd575c8cf100a3e522c1dd3a79
