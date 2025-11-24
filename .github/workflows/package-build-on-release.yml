@@ -52,7 +52,7 @@ jobs:
         with:
           token: ${{ secrets.GREENBONE_BOT_TOKEN }}
           repository: "greenbone/gea-pipeline"
-          ref: "DEVOPS-1734_create_the_workflows"
+          ref: "main"
           workflow: development-packaging.yml
           inputs: '{"release-info": "${{ github.event.release.name }}", "component-repo-name-to-package": "${{ github.repository }}"}'
           wait-for-completion-timeout: 10000
