@@ -82,20 +82,20 @@ jobs:
       # create binaries
       - uses: greenbone/actions/setup-pontos@v3
       # should be build by functional which is a dependency of release
-      - name: download rs binaries
-        uses: actions/download-artifact@v6
-        with:
-          pattern: rs-binaries-*
-          merge-multiple: true
-          path: ./assets
+#      - name: download rs binaries
+#        uses: actions/download-artifact@v6
+#        with:
+#          pattern: rs-binaries-*
+#          merge-multiple: true
+#          path: ./assets
       #- uses: ./.github/actions/compile-x86_64
       # - uses: ./.github/actions/compile-aarch64
-      - run: mv assets/linux/arm64/openvasd assets/openvasd-aarch64-unknown-linux-gnu
-      - run: mv assets/linux/arm64/scannerctl assets/scannerctl-aarch64-unknown-linux-gnu
-      - run: mv assets/linux/amd64/openvasd assets/openvasd-x86_64-unknown-linux-gnu
-      - run: mv assets/linux/amd64/scannerctl assets/scannerctl-x86_64-unknown-linux-gnu
-      - run: rm -rf assets/linux
-      - run: ls -las assets/
+#      - run: mv assets/linux/arm64/openvasd assets/openvasd-aarch64-unknown-linux-gnu
+#      - run: mv assets/linux/arm64/scannerctl assets/scannerctl-aarch64-unknown-linux-gnu
+#      - run: mv assets/linux/amd64/openvasd assets/openvasd-x86_64-unknown-linux-gnu
+#      - run: mv assets/linux/amd64/scannerctl assets/scannerctl-x86_64-unknown-linux-gnu
+#      - run: rm -rf assets/linux
+#      - run: ls -las assets/
       # create branch of version
       - name: prepare project version ${{ env.RELEASE_REF }} ${{ env.LATEST_VERSION }} -> ${{ env.NEW_VERSION }}
         run: |
@@ -104,8 +104,8 @@ jobs:
           # ignore failure on setting version
           pontos-version update ${{ env.NEW_VERSION }} || true
           # set app version on chart
-          awk '{sub(/appVersion: "[0-9]+\.[0-9]+\.[0-9]+"/,"appVersion: \"${{ env.NEW_VERSION }}\""); print}' charts/openvasd/Chart.yaml | tee /tmp/Chart.yaml
-          mv /tmp/Chart.yaml charts/openvasd/Chart.yaml
+#          awk '{sub(/appVersion: "[0-9]+\.[0-9]+\.[0-9]+"/,"appVersion: \"${{ env.NEW_VERSION }}\""); print}' charts/openvasd/Chart.yaml | tee /tmp/Chart.yaml
+#          mv /tmp/Chart.yaml charts/openvasd/Chart.yaml
           # as soon as pontos-version release is available and it supports cargo do
           # cd rust
           # pontos-version update ${{ env.NEW_VERSION }}

@@ -16,16 +16,16 @@ on:
   push:
     branches: [ main]
     tags: ["v*"]
-  pull_request:
-    types:
-      - opened
-      - synchronize
-      - reopened
-      - closed
-  repository_dispatch:
-  schedule:
-    # rebuild image every sunday
-    - cron: "0 0 * * 0"
+#  pull_request:
+#    types:
+#      - opened
+#      - synchronize
+#      - reopened
+#      - closed
+#  repository_dispatch:
+#  schedule:
+#    # rebuild image every sunday
+#    - cron: "0 0 * * 0"
 
 # Grants rights to push to the Github container registry.
 # The main workflow has to set the permissions.
