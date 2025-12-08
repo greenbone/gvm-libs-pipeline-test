@@ -14,6 +14,11 @@ jobs:
     name: Call Packaging workflow
     runs-on: "ubuntu-latest"
     steps:
+      - name: DEBUG - shot release data
+        run: |
+          echo ${{ github.event.release }}
+          echo release name: ${{ github.event.release.name }}
+
       - name: Trigger development-packaging workflow
         uses: greenbone/actions/trigger-workflow@487dab5354ace3dd575c8cf100a3e522c1dd3a79
         with:
