@@ -141,6 +141,7 @@ jobs:
         run: |
           export nrn="v${{ env.NEW_VERSION }}"
           export filename="$PROJECT-$nrn"
+          ls assets/*        
           curl -sfSL --retry 3 --retry-connrefused --retry-delay 2 -o assets/$filename.zip https://github.com/${{ github.repository }}/archive/refs/tags/$nrn.zip
           curl -sfSL --retry 3 --retry-connrefused --retry-delay 2 -o assets/$filename.tar.gz https://github.com/${{ github.repository }}/archive/refs/tags/$nrn.tar.gz
           echo -e "${{ secrets.gpg_key }}" > private.pgp
