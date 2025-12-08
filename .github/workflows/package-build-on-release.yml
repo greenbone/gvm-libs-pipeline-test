@@ -16,9 +16,9 @@ jobs:
     steps:
       - name: DEBUG - shot release data
         run: |
-          echo ${{ github.event.release }}
+          echo release: ${{ github.event.release }}
           echo release name: ${{ github.event.release.name }}
-
+          echo release body: ${{ github.event.release.body }}
       - name: Trigger development-packaging workflow
         uses: greenbone/actions/trigger-workflow@487dab5354ace3dd575c8cf100a3e522c1dd3a79
         with:
