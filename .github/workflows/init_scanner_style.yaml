@@ -86,14 +86,14 @@ jobs:
             echo "IS_LATEST_TAG=true" >> $GITHUB_ENV
           fi
           echo "VERSION=$tag_major.$tag_minor.$tag_patch" >> $GITHUB_ENV
-      - name: "set DOCKER_TAG = edge"
-        if: ( env.IS_VERSION_TAG != 'true' )
-        run: |
-          echo "DOCKER_TAG=edge" >> $GITHUB_ENV
-      - name: "set DOCKER_TAG = ${{ env.VERSION }}"
-        if: ( env.IS_VERSION_TAG == 'true' )
-        run: |
-          echo "DOCKER_TAG=$VERSION" >> $GITHUB_ENV
+#      - name: "set DOCKER_TAG = edge"
+#        if: ( env.IS_VERSION_TAG != 'true' )
+#        run: |
+#          echo "DOCKER_TAG=edge" >> $GITHUB_ENV
+#      - name: "set DOCKER_TAG = ${{ env.VERSION }}"
+#        if: ( env.IS_VERSION_TAG == 'true' )
+#        run: |
+#          echo "DOCKER_TAG=$VERSION" >> $GITHUB_ENV
 
       - name: "set KIND = ${{ inputs.release }}"
         run: echo "KIND=${{ inputs.release }}" >> $GITHUB_ENV
@@ -148,4 +148,4 @@ jobs:
           # docker
           echo "is_latest_tag=${{ env.IS_LATEST_TAG }}">> "$GITHUB_OUTPUT"
           echo "is_version_tag=${{ env.IS_VERSION_TAG }}">> "$GITHUB_OUTPUT"
-          echo "docker_tag=${{ env.DOCKER_TAG }}">> "$GITHUB_OUTPUT"
+#          echo "docker_tag=${{ env.DOCKER_TAG }}">> "$GITHUB_OUTPUT"
