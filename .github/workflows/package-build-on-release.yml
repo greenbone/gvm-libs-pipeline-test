@@ -29,7 +29,7 @@ jobs:
           repository: "greenbone/gea-pipeline"
           ref: "main"
           workflow: development-packaging.yml
-          inputs: '{"release-info": "${{ github.event.release.name }}", "component-repo-name-to-package": "${{ github.repository }}"}'
+          inputs: '{"release-info": "${{ github.event.release.name }}", "component-repo-name-to-package": "${{ github.repository }}", "release-tag": "${{ github.event.release.tag_name }}"}'
           wait-for-completion-timeout: 10000
 
   notify:
