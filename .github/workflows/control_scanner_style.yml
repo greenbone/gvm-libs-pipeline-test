@@ -13,9 +13,9 @@ on:
           - "patch"
         required: true
         default: "no_release"
-  push:
-    branches: [ main]
-    tags: ["v*"]
+#  push:
+#    branches: [ main]
+#    tags: ["v*"]
 #  pull_request:
 #    types:
 #      - opened
