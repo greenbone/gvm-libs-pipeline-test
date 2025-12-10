@@ -137,15 +137,16 @@ jobs:
           export nrn="v${{ env.NEW_VERSION }}"
           gh release create "$nrn" -F /tmp/changelog.md
 
-      - name: "sign ${{ env.PROJECT }}"
-        run: |
-          export nrn="v${{ env.NEW_VERSION }}"
-          export filename="$PROJECT-$nrn"
-          ls assets/*        
-          curl -sfSL --retry 3 --retry-connrefused --retry-delay 2 -o assets/$filename.zip https://github.com/${{ github.repository }}/archive/refs/tags/$nrn.zip
-          curl -sfSL --retry 3 --retry-connrefused --retry-delay 2 -o assets/$filename.tar.gz https://github.com/${{ github.repository }}/archive/refs/tags/$nrn.tar.gz
-          echo -e "${{ secrets.gpg_key }}" > private.pgp
-          echo ${{ secrets.gpg_pass }} | bash .github/sign-assets.sh private.pgp
-          rm assets/$filename.zip
-          rm assets/$filename.tar.gz
-          gh release upload $nrn assets/*
+# apparently not needed for testing
+#      - name: "sign ${{ env.PROJECT }}"
+#        run: |
+#          export nrn="v${{ env.NEW_VERSION }}"
+#          export filename="$PROJECT-$nrn"
+#          ls assets/*
+#          curl -sfSL --retry 3 --retry-connrefused --retry-delay 2 -o assets/$filename.zip https://github.com/${{ github.repository }}/archive/refs/tags/$nrn.zip
+#          curl -sfSL --retry 3 --retry-connrefused --retry-delay 2 -o assets/$filename.tar.gz https://github.com/${{ github.repository }}/archive/refs/tags/$nrn.tar.gz
+#          echo -e "${{ secrets.gpg_key }}" > private.pgp
+#          echo ${{ secrets.gpg_pass }} | bash .github/sign-assets.sh private.pgp
+#          rm assets/$filename.zip
+#          rm assets/$filename.tar.gz
+#          gh release upload $nrn assets/*
