@@ -91,6 +91,7 @@ Ensure (logging_domain, should_allow_setting_properties)
                is_equal_to_string ("|"));
 
   gvm_logging_domain_free (log_domain_entry);
+  g_io_channel_unref (log_channel);
   g_remove ("log_channel.log");
 }
 
@@ -108,13 +109,18 @@ logging_test_suite ()
 int
 main (int argc, char **argv)
 {
+  int ret;
   TestSuite *suite;
 
   suite = create_test_suite ();
   add_suite (suite, logging_test_suite ());
 
   if (argc > 1)
-    return run_single_test (suite, argv[1], create_text_reporter ());
+    ret = run_single_test (suite, argv[1], create_text_reporter ());
+  else
+    ret = run_test_suite (suite, create_text_reporter ());
 
-  return run_test_suite (suite, create_text_reporter ());
+  destroy_test_suite (suite);
+
+  return ret;
 }

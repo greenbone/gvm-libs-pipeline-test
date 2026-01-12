@@ -116,6 +116,13 @@ if(BUILD_TESTS)
     ${LINKER_HARDENING_FLAGS}
   )
   add_unit_test(
+    credentials-test
+    credentials_tests.c
+    gvm_base_shared
+    ${GLIB_LDFLAGS}
+    ${LINKER_HARDENING_FLAGS}
+  )
+  add_unit_test(
     cvss-test
     cvss_tests.c
     -lm
@@ -125,7 +132,7 @@ if(BUILD_TESTS)
 
   set(
     NETWORKING_TEST_LINKER_WRAP_OPTIONS
-    "-Wl,-wrap,g_io_channel_new_file,-wrap,g_io_channel_shutdown"
+    "-Wl,-wrap,g_io_channel_new_file,-wrap,g_io_channel_shutdown,-wrap,g_io_channel_unref"
   )
   add_unit_test(
     networking-test
@@ -137,8 +144,28 @@ if(BUILD_TESTS)
     ${NETWORKING_TEST_LINKER_WRAP_OPTIONS}
   )
   add_unit_test(
+    pidfile-test
+    pidfile_tests.c
+    gvm_util_shared
+    ${GLIB_LDFLAGS}
+    ${LINKER_HARDENING_FLAGS}
+  )
+  add_unit_test(
+    prefs-test
+    prefs_tests.c
+    gvm_base_shared
+    ${GLIB_LDFLAGS}
+    ${LINKER_HARDENING_FLAGS}
+  )
+  add_unit_test(
     pwpolicy-test
     pwpolicy_tests.c
+    ${GLIB_LDFLAGS}
+    ${LINKER_HARDENING_FLAGS}
+  )
+  add_unit_test(
+    settings-test
+    settings_tests.c
     ${GLIB_LDFLAGS}
     ${LINKER_HARDENING_FLAGS}
   )
@@ -172,6 +199,13 @@ if(BUILD_TESTS)
   add_unit_test(
     logging-test
     logging_tests.c
+    gvm_base_shared
+    ${GLIB_LDFLAGS}
+    ${LINKER_HARDENING_FLAGS}
+  )
+  add_unit_test(
+    strings-test
+    strings_tests.c
     gvm_base_shared
     ${GLIB_LDFLAGS}
     ${LINKER_HARDENING_FLAGS}

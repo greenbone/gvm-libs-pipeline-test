@@ -61,8 +61,6 @@ Ensure (serverutils, server_new_gnutls_set)
 
   chk (gnutls_x509_crt_sign2 (cert, cert, pkey, GNUTLS_DIG_SHA256, 0));
 
-  chk (gnutls_init (&session, GNUTLS_CLIENT));
-
   chk (gnutls_x509_privkey_export2 (pkey, GNUTLS_X509_FMT_PEM, &pkey_data));
   chk (gnutls_x509_crt_export2 (cert, GNUTLS_X509_FMT_PEM, &cert_data));
 
@@ -87,6 +85,7 @@ Ensure (serverutils, server_new_gnutls_set)
   gnutls_x509_crt_deinit (cert);
   for (unsigned i = 0; i < len; i++)
     gnutls_x509_crt_deinit (certs[i]);
+  gnutls_deinit (session);
   gnutls_free (certs);
   gnutls_x509_privkey_deinit (pkey);
   gnutls_certificate_free_credentials (cred);
@@ -96,6 +95,7 @@ Ensure (serverutils, server_new_gnutls_set)
 int
 main (int argc, char **argv)
 {
+  int ret;
   TestSuite *suite;
 
   suite = create_test_suite ();
@@ -103,7 +103,11 @@ main (int argc, char **argv)
   add_test_with_context (suite, serverutils, server_new_gnutls_set);
 
   if (argc > 1)
-    return run_single_test (suite, argv[1], create_text_reporter ());
+    ret = run_single_test (suite, argv[1], create_text_reporter ());
+  else
+    ret = run_test_suite (suite, create_text_reporter ());
 
-  return run_test_suite (suite, create_text_reporter ());
+  destroy_test_suite (suite);
+
+  return ret;
 }

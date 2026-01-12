@@ -295,7 +295,7 @@ gvm_http_response_stream_free (gvm_http_response_stream_t s)
  * created.
  *
  * @return A pointer to a `gvm_http_response_t` containing the response data and
- * status. Must be freed with `gvm_http_response_cleanup()`.
+ * status. Must be freed with `gvm_http_response_free()`.
  */
 gvm_http_response_t *
 gvm_http_request (const gchar *url, gvm_http_method_t method,
@@ -337,8 +337,8 @@ gvm_http_request (const gchar *url, gvm_http_method_t method,
     }
   else
     {
-      g_warning ("%s: Error performing CURL request: %s", __func__,
-                 curl_easy_strerror (result));
+      g_debug ("%s: Error performing CURL request: %s", __func__,
+               curl_easy_strerror (result));
       http_response->http_status = -1;
       http_response->data =
         g_strdup_printf ("{\"error\": \"CURL request failed: %s\"}",
@@ -369,20 +369,14 @@ gvm_http_request (const gchar *url, gvm_http_method_t method,
  *                 Can safely be NULL.
  */
 void
-gvm_http_response_cleanup (gvm_http_response_t *response)
+gvm_http_response_free (gvm_http_response_t *response)
 {
   if (!response)
     return;
 
-  if (response->http)
-    {
-      gvm_http_free (response->http);
-      response->http = NULL;
-    }
-
+  gvm_http_free (response->http);
   g_free (response->data);
-  response->data = NULL;
-  response->size = 0;
+  g_free (response);
 }
 
 /**
@@ -517,6 +511,39 @@ gvm_http_multi_perform (gvm_http_multi_t *multi, int *running_handles)
 }
 
 /**
+ * @brief Polls the multi-handle for activity, waiting up to the specified
+ * timeout.
+ *
+ * @param multi Pointer to the `gvm_http_multi_t` structure containing the
+ * multi-handle.
+ * @param timeout Maximum time in milliseconds to wait for activity.
+ *
+ * @return A `gvm_http_multi_result_t` indicating the result of the poll
+ * operation:
+ *         - GVM_HTTP_OK: Polling succeeded.
+ *         - GVM_HTTP_MULTI_BAD_HANDLE: Invalid or NULL multi-handle.
+ *         - GVM_HTTP_MULTI_FAILED: Polling failed due to an error.
+ */
+gvm_http_multi_result_t
+gvm_http_multi_poll (gvm_http_multi_t *multi, int timeout)
+{
+  if (!multi || !multi->handler)
+    return GVM_HTTP_MULTI_BAD_HANDLE;
+
+  CURLMcode poll_result =
+    curl_multi_poll (multi->handler, NULL, 0, timeout, NULL);
+  switch (poll_result)
+    {
+    case CURLM_OK:
+      return GVM_HTTP_OK;
+    case CURLM_BAD_HANDLE:
+      return GVM_HTTP_MULTI_BAD_HANDLE;
+    default:
+      return GVM_HTTP_MULTI_FAILED;
+    }
+}
+
+/**
  * @brief Removes a gvm_http_t handler from a multi-handle and frees its
  * resources.
  *
@@ -546,8 +573,14 @@ gvm_http_multi_handler_free (gvm_http_multi_t *multi, gvm_http_t *http)
 void
 gvm_http_multi_free (gvm_http_multi_t *multi)
 {
-  if (!multi || !multi->handler)
+  if (!multi)
     return;
+
+  if (!multi->handler)
+    {
+      g_free (multi);
+      return;
+    }
 
   int queued = 0;
   CURLMsg *msg;

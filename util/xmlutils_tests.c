@@ -7,6 +7,25 @@
 
 #include <cgreen/cgreen.h>
 #include <cgreen/mocks.h>
+#include <glib/gstdio.h>
+
+static gchar *
+write_temp_xml (const char *xml)
+{
+  gchar *path = NULL;
+  GError *err = NULL;
+  if (!g_file_open_tmp ("xmliterXXXXXX", &path, NULL))
+    return NULL;
+  if (!g_file_set_contents (path, xml, -1, &err))
+    {
+      if (path)
+        g_unlink (path);
+      g_clear_error (&err);
+      g_free (path);
+      return NULL;
+    }
+  return path;
+}
 
 Describe (xmlutils);
 BeforeEach (xmlutils)
@@ -33,6 +52,8 @@ Ensure (xmlutils, parse_entity_parses_simple_xml)
   assert_that (entity_name (b), is_equal_to_string ("b"));
 
   assert_that (entity_text (b), is_equal_to_string ("1"));
+
+  free_entity (entity);
 }
 
 Ensure (xmlutils, parse_entity_parses_xml_with_attributes)
@@ -47,6 +68,8 @@ Ensure (xmlutils, parse_entity_parses_xml_with_attributes)
   b = entity_child (entity, "b");
 
   assert_that (entity_attribute (b, "ba1"), is_equal_to_string ("test"));
+
+  free_entity (entity);
 }
 
 Ensure (xmlutils, parse_entity_handles_declaration)
@@ -64,6 +87,8 @@ Ensure (xmlutils, parse_entity_handles_declaration)
   assert_that (entity_name (b), is_equal_to_string ("b"));
 
   assert_that (entity_text (b), is_equal_to_string ("1"));
+
+  free_entity (entity);
 }
 
 Ensure (xmlutils, parse_entity_handles_namespace)
@@ -82,6 +107,8 @@ Ensure (xmlutils, parse_entity_handles_namespace)
   assert_that (entity_name (b), is_equal_to_string ("n:b"));
 
   assert_that (entity_text (b), is_equal_to_string ("1"));
+
+  free_entity (entity);
 }
 
 Ensure (xmlutils, parse_entity_oval_timestamp)
@@ -125,6 +152,8 @@ Ensure (xmlutils, parse_entity_oval_timestamp)
   assert_that (timestamp, is_not_null);
   assert_that (entity_text (timestamp),
                is_equal_to_string ("2015-08-20T10:09:07.183-04:00"));
+
+  free_entity (entity);
 }
 
 /* next_entities. */
@@ -160,6 +189,8 @@ Ensure (xmlutils, next_entities_handles_multiple_children)
   assert_that (entity_name (child), is_equal_to_string ("c"));
   assert_that (entity_text (child), is_equal_to_string ("3"));
   children = next_entities (children);
+
+  free_entity (entity);
 }
 
 /* parse_element */
@@ -168,6 +199,7 @@ Ensure (xmlutils, parse_element_parses_simple_xml)
 {
   element_t element, b;
   const gchar *xml;
+  gchar *text;
 
   xml = "<a><b>1</b></a>";
 
@@ -178,13 +210,18 @@ Ensure (xmlutils, parse_element_parses_simple_xml)
   b = element_child (element, "b");
   assert_that (element_name (b), is_equal_to_string ("b"));
 
-  assert_that (element_text (b), is_equal_to_string ("1"));
+  text = element_text (b);
+  assert_that (text, is_equal_to_string ("1"));
+  g_free (text);
+
+  element_free (element);
 }
 
 Ensure (xmlutils, parse_element_parses_xml_with_attributes)
 {
   element_t element, b;
   const gchar *xml;
+  gchar *attr;
 
   xml = "<a><b ba1='test'>1</b></a>";
 
@@ -192,13 +229,18 @@ Ensure (xmlutils, parse_element_parses_xml_with_attributes)
 
   b = element_child (element, "b");
 
-  assert_that (element_attribute (b, "ba1"), is_equal_to_string ("test"));
+  attr = element_attribute (b, "ba1");
+  assert_that (attr, is_equal_to_string ("test"));
+  g_free (attr);
+
+  element_free (element);
 }
 
 Ensure (xmlutils, parse_element_handles_declaration)
 {
   element_t element, b;
   const gchar *xml;
+  gchar *text;
 
   xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><a><b ba1='test'>1</b></a>";
 
@@ -209,13 +251,18 @@ Ensure (xmlutils, parse_element_handles_declaration)
   b = element_child (element, "b");
   assert_that (element_name (b), is_equal_to_string ("b"));
 
-  assert_that (element_text (b), is_equal_to_string ("1"));
+  text = element_text (b);
+  assert_that (text, is_equal_to_string ("1"));
+  g_free (text);
+
+  element_free (element);
 }
 
 Ensure (xmlutils, parse_element_handles_namespace)
 {
   element_t element, b;
   const gchar *xml;
+  gchar *text, *attr;
 
   xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><a><n:b ba1='test' "
         "n2:ba2='test2'>1</n:b></a>";
@@ -227,14 +274,20 @@ Ensure (xmlutils, parse_element_handles_namespace)
   b = element_child (element, "n:b");
   assert_that (element_name (b), is_equal_to_string ("n:b"));
 
-  assert_that (element_text (b), is_equal_to_string ("1"));
+  text = element_text (b);
+  assert_that (text, is_equal_to_string ("1"));
+  g_free (text);
 
-  assert_that (element_attribute (b, "n2:ba2"), is_equal_to_string ("test2"));
+  attr = element_attribute (b, "n2:ba2");
+  assert_that (attr, is_equal_to_string ("test2"));
+  g_free (attr);
+
+  element_free (element);
 }
 
 Ensure (xmlutils, parse_element_oval_timestamp)
 {
-  gchar *generator_name;
+  gchar *generator_name, *text;
   element_t generator, timestamp, element;
   const gchar *xml;
 
@@ -271,8 +324,12 @@ Ensure (xmlutils, parse_element_oval_timestamp)
   assert_that (generator, is_not_null);
   timestamp = element_child (generator, "oval:timestamp");
   assert_that (timestamp, is_not_null);
-  assert_that (element_text (timestamp),
-               is_equal_to_string ("2015-08-20T10:09:07.183-04:00"));
+
+  text = element_text (timestamp);
+  assert_that (text, is_equal_to_string ("2015-08-20T10:09:07.183-04:00"));
+  g_free (text);
+
+  element_free (element);
 }
 
 Ensure (xmlutils, parse_element_item_metadata)
@@ -308,6 +365,8 @@ Ensure (xmlutils, parse_element_item_metadata)
   meta = element_child (item, "meta:item-metadata");
   assert_that (meta, is_not_null);
   assert_that (element_name (meta), is_equal_to_string ("meta:item-metadata"));
+
+  element_free (element);
 }
 
 Ensure (xmlutils, parse_element_item_metadata_with_namespace)
@@ -362,12 +421,15 @@ Ensure (xmlutils, parse_element_item_metadata_with_namespace)
   assert_that (element_name (meta), is_equal_to_string ("item-metadata"));
   // assert_that (element_name (meta), is_equal_to_string
   // ("meta:item-metadata"));
+
+  element_free (element);
 }
 
 Ensure (xmlutils, parse_element_item_handles_cdata)
 {
   element_t element;
   const gchar *xml;
+  gchar *text;
 
   xml =
     "<description><![CDATA[Several vulnerabilities were discovered in the "
@@ -404,8 +466,9 @@ Ensure (xmlutils, parse_element_item_handles_cdata)
 
   assert_that (parse_element (xml, &element), is_equal_to (0));
   assert_that (element_name (element), is_equal_to_string ("description"));
+  text = element_text (element);
   assert_that (
-    element_text (element),
+    text,
     is_equal_to_string (
       "Several vulnerabilities were discovered in the Chromium browser. The "
       "Common Vulnerabilities and Exposures project identifies the following "
@@ -438,6 +501,8 @@ Ensure (xmlutils, parse_element_item_handles_cdata)
       "[70027] Cross-origin error message leak with workers. [70336] Stale "
       "pointer in table painting. [72028] Stale pointer with SVG cursors. "
       "[73746]"));
+  g_free (text);
+  element_free (element);
 }
 
 /* element_next. */
@@ -446,6 +511,7 @@ Ensure (xmlutils, element_next_handles_multiple_children)
 {
   element_t element, child;
   const gchar *xml;
+  gchar *text;
 
   xml = "<top><a>1</a><b>2</b><c>3</c></top>";
 
@@ -456,17 +522,25 @@ Ensure (xmlutils, element_next_handles_multiple_children)
   child = element_first_child (element);
   assert_that (child, is_not_null);
   assert_that (element_name (child), is_equal_to_string ("a"));
-  assert_that (element_text (child), is_equal_to_string ("1"));
+  text = element_text (child);
+  assert_that (text, is_equal_to_string ("1"));
+  g_free (text);
 
   child = element_next (child);
   assert_that (child, is_not_null);
   assert_that (element_name (child), is_equal_to_string ("b"));
-  assert_that (element_text (child), is_equal_to_string ("2"));
+  text = element_text (child);
+  assert_that (text, is_equal_to_string ("2"));
+  g_free (text);
 
   child = element_next (child);
   assert_that (child, is_not_null);
   assert_that (element_name (child), is_equal_to_string ("c"));
-  assert_that (element_text (child), is_equal_to_string ("3"));
+  text = element_text (child);
+  assert_that (text, is_equal_to_string ("3"));
+  g_free (text);
+
+  element_free (element);
 }
 
 Ensure (xmlutils, parse_element_free_using_child)
@@ -504,11 +578,148 @@ Ensure (xmlutils, print_element_to_string_prints)
   element_free (element);
 }
 
+Ensure (xmlutils, depth1_returns_top_level_children_in_order)
+{
+  gchar *text;
+  const char *xml = "<root>"
+                    "  <a x='1'>A</a>"
+                    "  <b>B</b>"
+                    "  <c><d>D</d></c>"
+                    "</root>";
+
+  gchar *path = write_temp_xml (xml);
+  assert_that (path, is_not_null);
+
+  xml_file_iterator_t it = xml_file_iterator_new ();
+  assert_that (xml_file_iterator_init_from_file_path (it, path, 1),
+               is_equal_to (0));
+
+  gchar *err = NULL;
+  element_t e;
+
+  e = xml_file_iterator_next (it, &err);
+  assert_that (err, is_null);
+  assert_that (e, is_not_null);
+  assert_that (element_name (e), is_equal_to_string ("a"));
+  text = element_text (e);
+  assert_that (text, is_equal_to_string ("A"));
+  g_free (text);
+  element_free (e);
+
+  e = xml_file_iterator_next (it, &err);
+  assert_that (err, is_null);
+  assert_that (e, is_not_null);
+  assert_that (element_name (e), is_equal_to_string ("b"));
+  text = element_text (e);
+  assert_that (text, is_equal_to_string ("B"));
+  g_free (text);
+  element_free (e);
+
+  e = xml_file_iterator_next (it, &err);
+  assert_that (err, is_null);
+  assert_that (e, is_not_null);
+  assert_that (element_name (e), is_equal_to_string ("c"));
+  element_t d = element_child (e, "d");
+  assert_that (d, is_not_null);
+  text = element_text (d);
+  assert_that (text, is_equal_to_string ("D"));
+  g_free (text);
+  element_free (e);
+
+  e = xml_file_iterator_next (it, &err);
+  assert_that (e, is_null);
+  assert_that (err, is_null);
+
+  xml_file_iterator_free (it);
+  g_unlink (path);
+  g_free (path);
+}
+
+Ensure (xmlutils, depth2_returns_grandchildren)
+{
+  gchar *attr;
+  const char *xml = "<root>"
+                    "  <a>A</a>"
+                    "  <c><d id='1'>D</d><d id='2'>E</d></c>"
+                    "</root>";
+
+  gchar *path = write_temp_xml (xml);
+  assert_that (path, is_not_null);
+
+  xml_file_iterator_t it = xml_file_iterator_new ();
+  assert_that (xml_file_iterator_init_from_file_path (it, path, 2),
+               is_equal_to (0));
+
+  gchar *err = NULL;
+  element_t e;
+
+  // a has no grandchildren (depth2 under root), but iterator will yield
+  // the d nodes when closing their parent <c>
+  e = xml_file_iterator_next (it, &err);
+  assert_that (err, is_null);
+  assert_that (e, is_not_null);
+  assert_that (element_name (e), is_equal_to_string ("d"));
+  attr = element_attribute (e, "id");
+  assert_that (attr, is_equal_to_string ("1"));
+  g_free (attr);
+  element_free (e);
+
+  e = xml_file_iterator_next (it, &err);
+  assert_that (err, is_null);
+  assert_that (e, is_not_null);
+  assert_that (element_name (e), is_equal_to_string ("d"));
+  attr = element_attribute (e, "id");
+  assert_that (attr, is_equal_to_string ("2"));
+  g_free (attr);
+  element_free (e);
+
+  e = xml_file_iterator_next (it, &err);
+  assert_that (e, is_null);
+  assert_that (err, is_null);
+
+  xml_file_iterator_free (it);
+  g_unlink (path);
+  g_free (path);
+}
+
+Ensure (xmlutils, rewind_resets_state)
+{
+  const char *xml = "<root><x>1</x><y>2</y></root>";
+  gchar *path = write_temp_xml (xml);
+  assert_that (path, is_not_null);
+
+  xml_file_iterator_t it = xml_file_iterator_new ();
+  assert_that (xml_file_iterator_init_from_file_path (it, path, 1),
+               is_equal_to (0));
+
+  gchar *err = NULL;
+  element_t e;
+
+  e = xml_file_iterator_next (it, &err);
+  assert_that (element_name (e), is_equal_to_string ("x"));
+  element_free (e);
+
+  assert_that (xml_file_iterator_rewind (it), is_equal_to (0));
+
+  e = xml_file_iterator_next (it, &err);
+  assert_that (element_name (e), is_equal_to_string ("x"));
+  element_free (e);
+
+  e = xml_file_iterator_next (it, &err);
+  assert_that (element_name (e), is_equal_to_string ("y"));
+  element_free (e);
+
+  xml_file_iterator_free (it);
+  g_unlink (path);
+  g_free (path);
+}
+
 /* Test suite. */
 
 int
 main (int argc, char **argv)
 {
+  int ret;
   TestSuite *suite;
 
   suite = create_test_suite ();
@@ -540,8 +751,19 @@ main (int argc, char **argv)
   add_test_with_context (suite, xmlutils,
                          element_next_handles_multiple_children);
 
-  if (argc > 1)
-    return run_single_test (suite, argv[1], create_text_reporter ());
+  add_test_with_context (suite, xmlutils,
+                         depth1_returns_top_level_children_in_order);
 
-  return run_test_suite (suite, create_text_reporter ());
+  add_test_with_context (suite, xmlutils, depth2_returns_grandchildren);
+
+  add_test_with_context (suite, xmlutils, rewind_resets_state);
+
+  if (argc > 1)
+    ret = run_single_test (suite, argv[1], create_text_reporter ());
+  else
+    ret = run_test_suite (suite, create_text_reporter ());
+
+  destroy_test_suite (suite);
+
+  return ret;
 }

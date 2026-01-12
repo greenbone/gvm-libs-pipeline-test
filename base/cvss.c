@@ -956,6 +956,7 @@ simplify_cvss4_vector (const char *cvss_str)
       if (value == NULL)
         {
           g_debug ("%s: value for metric %s missing", __func__, metric_str);
+          g_strfreev (split_component);
           break;
         }
       else if (strcasecmp (metric_str, "U") == 0)
@@ -968,6 +969,7 @@ simplify_cvss4_vector (const char *cvss_str)
               g_debug ("%s: value for metric %s must be one of"
                        " 'Red', 'Amber', 'Green', 'Clear', 'X'",
                        __func__, metric_str);
+              g_strfreev (split_component);
               break;
             }
           else
@@ -977,6 +979,7 @@ simplify_cvss4_vector (const char *cvss_str)
         {
           g_debug ("%s: value for metric %s must be 1 character", __func__,
                    metric_str);
+          g_strfreev (split_component);
           break;
         }
 
@@ -1221,6 +1224,7 @@ cvss4_maximal_scoring_differences (const char *macrovector,
       eq2_next_lower_macro[1]++;
       score_eq2_next_lower_macro =
         cvss4_macrovector_score (eq2_next_lower_macro);
+      g_free (eq2_next_lower_macro);
     }
   else
     score_eq2_next_lower_macro = -1.0;

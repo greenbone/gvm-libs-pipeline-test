@@ -39,6 +39,9 @@ gvm_ssh_pkcs8_decrypt (const char *pkcs8_key, const char *passphrase)
   int rc;
   size_t size = sizeof (buffer);
 
+  if (pkcs8_key == NULL)
+    return NULL;
+
   rc = gnutls_x509_privkey_init (&key);
   if (rc)
     return NULL;
@@ -46,12 +49,12 @@ gvm_ssh_pkcs8_decrypt (const char *pkcs8_key, const char *passphrase)
   data.data = (void *) g_strdup (pkcs8_key);
   rc = gnutls_x509_privkey_import_pkcs8 (key, &data, GNUTLS_X509_FMT_PEM,
                                          passphrase ? passphrase : "", 0);
+  g_free (data.data);
   if (rc)
     {
       gnutls_x509_privkey_deinit (key);
       return NULL;
     }
-  g_free (data.data);
   rc = gnutls_x509_privkey_export (key, GNUTLS_X509_FMT_PEM, buffer, &size);
   gnutls_x509_privkey_deinit (key);
   if (rc)
@@ -97,4 +100,67 @@ gvm_ssh_public_from_private (const char *private_key, const char *passphrase)
   pub_str = g_strdup_printf ("%s %s", type, pub_key);
   g_free (pub_key);
   return pub_str;
+}
+
+/**
+ * @brief Gets information from a SSH private key.
+ *
+ * @param[in]   private_key     Private key to get info from.
+ * @param[in]   passphrase      Passphrase for the private key.
+ * @param[out]  type            Static string describing the type of the key.
+ * @param[out]  sha256_hash     The SHA-256 hash of the key.
+ *
+ * @return 0 on success, -1 on error.
+ */
+int
+gvm_ssh_private_key_info (const char *private_key, const char *passphrase,
+                          const char **type, char **sha256_hash)
+{
+  ssh_key priv;
+  char *decrypted_priv;
+  int ret;
+
+  if (type)
+    *type = NULL;
+  if (sha256_hash)
+    *sha256_hash = NULL;
+
+  if (private_key == NULL)
+    return -1;
+  decrypted_priv = gvm_ssh_pkcs8_decrypt (private_key, passphrase);
+  ret = ssh_pki_import_privkey_base64 (decrypted_priv ? decrypted_priv
+                                                      : private_key,
+                                       passphrase, NULL, NULL, &priv);
+  free (decrypted_priv);
+  if (ret)
+    return -1;
+
+  if (type)
+    {
+      *type = ssh_key_type_to_char (ssh_key_type (priv));
+    }
+
+  if (sha256_hash)
+    {
+      unsigned char *hash = NULL;
+      size_t hash_size = 0;
+      ret = ssh_get_publickey_hash (priv, SSH_PUBLICKEY_HASH_SHA256, &hash,
+                                    &hash_size);
+      if (ret == 0)
+        {
+          gchar *hex = g_malloc0 (hash_size * 2 + 1);
+          for (unsigned int i = 0; i < hash_size; i++)
+            {
+              g_snprintf (hex + i * 2, 3, "%02x", hash[i]);
+            }
+          ssh_clean_pubkey_hash (&hash);
+          *sha256_hash = hex;
+        }
+    }
+
+  ssh_key_free (priv);
+
+  if (ret)
+    return -1;
+  return 0;
 }

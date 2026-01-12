@@ -60,6 +60,7 @@ if(BUILD_SHARED)
     gvm_openvasd_shared
     LINK_PRIVATE
       gvm_http_shared
+      gvm_http_scanner_shared
       gvm_util_shared
       ${GLIB_LDFLAGS}
       ${CURL_LDFLAGS}
@@ -74,6 +75,7 @@ if(BUILD_TESTS)
     openvasd-test
     openvasd_tests.c
     gvm_http_shared
+    gvm_http_scanner_shared
     gvm_base_shared
     gvm_util_shared
     ${GLIB_LDFLAGS}

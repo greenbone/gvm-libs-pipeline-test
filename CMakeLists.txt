@@ -22,8 +22,9 @@ endif(NOT CMAKE_BUILD_TYPE)
 option(BUILD_STATIC "Build static versions of the libraries" OFF)
 option(ENABLE_COVERAGE "Enable support for coverage analysis" OFF)
 option(BUILD_TESTS "Build tests for the libraries" OFF)
-option(OPENVASD "Build openvasd library" ON)
+option(ENABLE_OPENVASD "Build openvasd library" ON)
 option(ENABLE_AGENTS "Build agent controller library" ON)
+option(ENABLE_CREDENTIAL_STORES "Build credential store library" ON)
 
 if(NOT BUILD_STATIC)
   set(BUILD_SHARED ON)
@@ -46,9 +47,9 @@ if(CLANG_FORMAT)
     format
     COMMAND
       ${CLANG_FORMAT} "-i" "./agent_controller/*.c" "./base/*.c" "./boreas/*.c"
-      "./gmp/*.c" "./openvasd/*.c" "./osp/*.c" "./util/*.c"
+      "./gmp/*.c" "./http_scanner/*.c" "./openvasd/*.c" "./osp/*.c" "./util/*.c"
       "./agent_controller/*.h" "./base/*.h" "./boreas/*.h" "./gmp/*.h"
-      "./openvasd/*.h" "./osp/*.h" "./util/*.h"
+      "./http_scanner/*.h" "./openvasd/*.h" "./osp/*.h" "./util/*.h"
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
   )
 else(CLANG_FORMAT)
@@ -256,9 +257,16 @@ if(BUILD_TESTS AND NOT SKIP_SRC)
     xmlutils-test
   )
 
-  if(OPENVASD)
-    list(APPEND TESTS openvasd-test httputils-test vtparser-test)
-  endif(OPENVASD)
+  if(ENABLE_OPENVASD)
+    list(
+      APPEND TESTS
+      openvasd-test
+      http-scanner-test
+      container_image_scanner-test
+      httputils-test
+      vtparser-test
+    )
+  endif(ENABLE_OPENVASD)
 
   if(ENABLE_AGENTS)
     list(APPEND TESTS agent-controller-test)
@@ -279,15 +287,15 @@ if(BUILD_TESTS AND NOT SKIP_SRC)
     add_custom_target(
       coverage-html
       COMMAND
-        ${GCOVR} --html-details ${COVERAGE_DIR}/coverage.html -r
-        ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR}
+        ${GCOVR} --config ${CMAKE_SOURCE_DIR}/.gcovr.cfg --html-details
+        ${COVERAGE_DIR}/coverage.html -r ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR}
       DEPENDS tests
     )
     add_custom_target(
       coverage-xml
       COMMAND
-        ${GCOVR} --xml ${COVERAGE_DIR}/coverage.xml -r ${CMAKE_SOURCE_DIR}
-        ${CMAKE_BINARY_DIR}
+        ${GCOVR} --config ${CMAKE_SOURCE_DIR}/.gcovr.cfg --xml
+        ${COVERAGE_DIR}/coverage.xml -r ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR}
       DEPENDS tests
     )
     add_custom_target(coverage DEPENDS coverage-xml coverage-html)
@@ -309,17 +317,23 @@ if(NOT SKIP_SRC)
   add_subdirectory(osp)
   add_subdirectory(gmp)
 
-  if(OPENVASD)
+  if(ENABLE_OPENVASD OR ENABLE_AGENTS OR ENABLE_CREDENTIAL_STORES)
     add_subdirectory(http)
+  endif(ENABLE_OPENVASD OR ENABLE_AGENTS OR ENABLE_CREDENTIAL_STORES)
+
+  if(ENABLE_OPENVASD)
+    add_subdirectory(http_scanner)
     add_subdirectory(openvasd)
-  endif(OPENVASD)
+    add_subdirectory(container_image_scanner)
+  endif(ENABLE_OPENVASD)
 
   if(ENABLE_AGENTS)
-    if(NOT OPENVASD)
-      add_subdirectory(http)
-    endif(NOT OPENVASD)
     add_subdirectory(agent_controller)
   endif(ENABLE_AGENTS)
+
+  if(ENABLE_CREDENTIAL_STORES)
+    add_subdirectory(cyberark)
+  endif(ENABLE_CREDENTIAL_STORES)
 endif(NOT SKIP_SRC)
 
 ## Documentation

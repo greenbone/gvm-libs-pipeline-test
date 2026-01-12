@@ -69,6 +69,7 @@ Ensure (PBA, verify_hash_returns_invalid_on_np_hash_np_password)
   assert_not_equal (hash, NULL);
   assert_equal (pba_verify_hash (&setting, NULL, "*password"), INVALID);
   assert_equal (pba_verify_hash (&setting, hash, NULL), INVALID);
+  free (hash);
 }
 
 Ensure (PBA, defaults)
@@ -110,11 +111,13 @@ Ensure (PBA, handle_md5_hash)
   hash = get_password_hashes ("admin");
   assert_equal (pba_verify_hash (settings, hash, "admin"), UPDATE_RECOMMENDED);
   pba_finalize (settings);
+  g_free (hash);
 }
 
 int
 main (int argc, char **argv)
 {
+  int ret;
   TestSuite *suite;
 
   suite = create_test_suite ();
@@ -130,7 +133,13 @@ main (int argc, char **argv)
   add_test_with_context (suite, PBA, handle_md5_hash);
   add_test_with_context (suite, PBA, defaults);
   add_test_with_context (suite, PBA, initialization);
+
   if (argc > 1)
-    return run_single_test (suite, argv[1], create_text_reporter ());
-  return run_test_suite (suite, create_text_reporter ());
+    ret = run_single_test (suite, argv[1], create_text_reporter ());
+  else
+    ret = run_test_suite (suite, create_text_reporter ());
+
+  destroy_test_suite (suite);
+
+  return ret;
 }

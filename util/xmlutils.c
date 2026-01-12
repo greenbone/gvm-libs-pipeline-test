@@ -1543,6 +1543,7 @@ parse_entity (const char *string, entity_t *entity)
           free_entity (context_data.first->data);
           g_slist_free_1 (context_data.first);
         }
+      g_markup_parse_context_free (xml_context);
       return -2;
     }
   if (context_data.done)
@@ -1557,10 +1558,12 @@ parse_entity (const char *string, entity_t *entity)
               free_entity (context_data.first->data);
               g_slist_free_1 (context_data.first);
             }
+          g_markup_parse_context_free (xml_context);
           return -2;
         }
       *entity = (entity_t) context_data.first->data;
       g_slist_free_1 (context_data.first);
+      g_markup_parse_context_free (xml_context);
       return 0;
     }
   if (context_data.first && context_data.first->data)
@@ -1568,6 +1571,7 @@ parse_entity (const char *string, entity_t *entity)
       free_entity (context_data.first->data);
       g_slist_free_1 (context_data.first);
     }
+  g_markup_parse_context_free (xml_context);
   return -3;
 }
 
@@ -1933,7 +1937,7 @@ int
  * @param[in]   find_element      Name of the element to find.
  * @param[in]   find_attributes   GHashTable of attributes to find.
  *
- * @return  1 if element was found, 0 if not.
+ * @return 1 if element was found, 0 if not.
  */
 find_element_in_xml_file (gchar *file_path, gchar *find_element,
                           GHashTable *find_attributes)
@@ -2332,6 +2336,7 @@ struct xml_file_iterator_struct
   xmlParserCtxtPtr parser_ctxt; //< libXML parser context for building DOM
   gchar *file_path;             //< Path to the XML file being processed
   FILE *file;                   //< Stream pointer for the XML file
+  int stack_depth;              // track depth (replaces nodeNr)
 };
 
 /**
@@ -2364,6 +2369,7 @@ xml_file_iterator_start_element_ns (void *ctx, const xmlChar *localname,
   xmlSAX2StartElementNs (iterator->parser_ctxt, localname, prefix, URI,
                          nb_namespaces, namespaces, nb_attributes, nb_defaulted,
                          attributes);
+  iterator->stack_depth++;
 }
 
 /**
@@ -2386,8 +2392,8 @@ xml_file_iterator_end_element_ns (void *ctx, const xmlChar *localname,
 {
   xml_file_iterator_t iterator = (xml_file_iterator_t) ctx;
   xmlSAX2EndElementNs (iterator->parser_ctxt, localname, prefix, URI);
-
-  if (iterator->parser_ctxt->nodeNr == iterator->output_depth)
+  iterator->stack_depth--;
+  if (iterator->stack_depth == iterator->output_depth)
     {
       xmlNodePtr parent, child;
       parent = iterator->parser_ctxt->node;
@@ -2598,7 +2604,7 @@ xml_file_iterator_entity_decl (void *ctx, const xmlChar *name, int type,
  * libXML parser context from the iterator struct passed as user data.
  *
  * @param[in] ctx           parser context data / iterator data structure
- * @param[in] name          the name of the element
+ * @param[in] elem          the name of the element
  * @param[in] fullname      the attribute name
  * @param[in] type          the attribute type
  * @param[in] def           the type of default value
@@ -2626,8 +2632,6 @@ xml_file_iterator_attribute_decl (void *ctx, const xmlChar *elem,
  * @param[in] ctx           parser context data / iterator data structure
  * @param[in] name          the element name
  * @param[in] type          the element type
- * @param[in] def           the type of default value
- * @param[in] defaultValue  the attribute default value
  * @param[in] content       the element value tree
  */
 static void
@@ -2899,6 +2903,7 @@ xml_file_iterator_init_from_file_path (xml_file_iterator_t iterator,
     return 3;
 
   iterator->initialized = 1;
+  iterator->stack_depth = 0;
 
   return 0;
 }
@@ -2929,6 +2934,8 @@ xml_file_iterator_free (xml_file_iterator_t iterator)
 
   if (iterator->parser_ctxt)
     {
+      if (iterator->parser_ctxt->myDoc)
+        xmlFreeDoc (iterator->parser_ctxt->myDoc);
       xmlFreeParserCtxt (iterator->parser_ctxt);
     }
 
@@ -2962,12 +2969,15 @@ xml_file_iterator_rewind (xml_file_iterator_t iterator)
 
   if (iterator->parser_ctxt)
     {
+      if (iterator->parser_ctxt->myDoc)
+        xmlFreeDoc (iterator->parser_ctxt->myDoc);
       xmlFreeParserCtxt (iterator->parser_ctxt);
       iterator->parser_ctxt = xmlCreatePushParserCtxt (
         &(iterator->sax_handler), iterator, NULL, 0, iterator->file_path);
       if (iterator->parser_ctxt == NULL)
         return 1;
     }
+  iterator->stack_depth = 0;
 
   return 0;
 }

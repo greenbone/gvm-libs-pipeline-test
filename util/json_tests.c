@@ -49,6 +49,7 @@ Ensure (json, gvm_json_obj_double_gets_value)
   assert_that (json, is_not_null);
   d = gvm_json_obj_double (json, "eg");
   assert_that_double (d, is_equal_to_double (2.3));
+  cJSON_Delete (json);
 }
 
 Ensure (json, gvm_json_obj_double_0_when_missing)
@@ -60,6 +61,7 @@ Ensure (json, gvm_json_obj_double_0_when_missing)
   assert_that (json, is_not_null);
   d = gvm_json_obj_double (json, "err");
   assert_that_double (d, is_equal_to_double (0));
+  cJSON_Delete (json);
 }
 
 /* gvm_json_obj_check_str */
@@ -217,6 +219,7 @@ Ensure (json, gvm_json_obj_check_int_0_and_val_when_has)
 int
 main (int argc, char **argv)
 {
+  int ret;
   TestSuite *suite;
 
   suite = create_test_suite ();
@@ -246,6 +249,11 @@ main (int argc, char **argv)
                          gvm_json_obj_check_str_0_and_val_when_has);
 
   if (argc > 1)
-    return run_single_test (suite, argv[1], create_text_reporter ());
-  return run_test_suite (suite, create_text_reporter ());
+    ret = run_single_test (suite, argv[1], create_text_reporter ());
+  else
+    ret = run_test_suite (suite, create_text_reporter ());
+
+  destroy_test_suite (suite);
+
+  return ret;
 }

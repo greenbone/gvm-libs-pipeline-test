@@ -84,6 +84,7 @@ Ensure (jsonpull, can_init_parser_with_defaults)
                is_equal_to (GVM_JSON_PULL_PARSE_BUFFER_LIMIT));
   assert_that (parser.read_buffer_size,
                is_equal_to (GVM_JSON_PULL_READ_BUFFER_SIZE));
+  gvm_json_pull_parser_cleanup (&parser);
 }
 
 Ensure (jsonpull, can_parse_false)
@@ -400,7 +401,7 @@ Ensure (jsonpull, can_expand_arrays)
   assert_that (expanded, is_not_null);
   assert_that (cJSON_IsArray (expanded), is_true);
   assert_that (expanded->child, is_null);
-  cJSON_free (expanded);
+  cJSON_Delete (expanded);
 
   // single-element array
   gvm_json_pull_parser_next (&parser, &event);
@@ -416,7 +417,7 @@ Ensure (jsonpull, can_expand_arrays)
   assert_that (child->valueint, is_equal_to (1));
   child = child->next;
   assert_that (child, is_null);
-  cJSON_free (expanded);
+  cJSON_Delete (expanded);
 
   // multi-element array
   gvm_json_pull_parser_next (&parser, &event);
@@ -434,7 +435,7 @@ Ensure (jsonpull, can_expand_arrays)
   assert_that (child, is_not_null);
   assert_that (cJSON_IsArray (child), is_true);
   assert_that (child->child->valueint, is_equal_to (3));
-  cJSON_free (expanded);
+  cJSON_Delete (expanded);
 
   // string array
   gvm_json_pull_parser_next (&parser, &event);
@@ -452,7 +453,7 @@ Ensure (jsonpull, can_expand_arrays)
   assert_that (child, is_not_null);
   assert_that (cJSON_IsString (child), is_true);
   assert_that (child->valuestring, is_equal_to_string ("\"B]"));
-  cJSON_free (expanded);
+  cJSON_Delete (expanded);
 
   // array end and EOF
   gvm_json_pull_parser_next (&parser, &event);
@@ -482,7 +483,7 @@ Ensure (jsonpull, can_expand_objects)
   assert_that (error_message, is_null);
   assert_that (cJSON_IsObject (expanded), is_true);
   assert_that (expanded->child, is_null);
-  cJSON_free (expanded);
+  cJSON_Delete (expanded);
 
   gvm_json_pull_parser_next (&parser, &event);
   assert_that (event.type, is_equal_to (GVM_JSON_PULL_EVENT_OBJECT_START));
@@ -505,7 +506,7 @@ Ensure (jsonpull, can_expand_objects)
   assert_that (cJSON_IsObject (child), is_true);
   assert_that (child->string, is_equal_to_string ("F"));
   assert_that (child->child, is_null);
-  cJSON_free (expanded);
+  cJSON_Delete (expanded);
 
   // object end and EOF
   gvm_json_pull_parser_next (&parser, &event);
@@ -984,6 +985,7 @@ Ensure (jsonpull, fails_for_expand_before_container)
   assert_that (error_message, is_equal_to_string ("can only expand after"
                                                   " array or object start"));
 
+  g_free (error_message);
   CLEANUP_JSON_PARSER;
 }
 
@@ -1003,6 +1005,7 @@ Ensure (jsonpull, fails_for_expand_after_value)
   assert_that (error_message, is_equal_to_string ("can only expand after"
                                                   " array or object start"));
 
+  g_free (error_message);
   CLEANUP_JSON_PARSER;
 }
 
@@ -1020,6 +1023,7 @@ Ensure (jsonpull, fails_for_expand_invalid_content)
   assert_that (error_message,
                is_equal_to_string ("could not parse expanded container"));
 
+  g_free (error_message);
   CLEANUP_JSON_PARSER;
 }
 
@@ -1038,6 +1042,7 @@ Ensure (jsonpull, fails_for_expand_overlong)
   assert_that (error_message,
                is_equal_to_string ("container exceeds size limit of 10 bytes"));
 
+  g_free (error_message);
   CLEANUP_JSON_PARSER;
 }
 
@@ -1055,6 +1060,7 @@ Ensure (jsonpull, fails_for_expand_unexpected_curly_brace)
   assert_that (error_message,
                is_equal_to_string ("unexpected closing curly brace"));
 
+  g_free (error_message);
   CLEANUP_JSON_PARSER;
 }
 
@@ -1072,6 +1078,7 @@ Ensure (jsonpull, fails_for_expand_unexpected_square_bracket)
   assert_that (error_message,
                is_equal_to_string ("unexpected closing square bracket"));
 
+  g_free (error_message);
   CLEANUP_JSON_PARSER;
 }
 
@@ -1088,6 +1095,7 @@ Ensure (jsonpull, fails_for_expand_eof)
   assert_that (cjson_value, is_null);
   assert_that (error_message, is_equal_to_string ("unexpected EOF"));
 
+  g_free (error_message);
   CLEANUP_JSON_PARSER;
 }
 
@@ -1104,12 +1112,14 @@ Ensure (jsonpull, fails_for_expand_read_error)
   assert_that (cjson_value, is_null);
   assert_that (error_message, is_equal_to_string (JSON_READ_ERROR));
 
+  g_free (error_message);
   CLEANUP_JSON_PARSER;
 }
 
 int
 main (int argc, char **argv)
 {
+  int ret;
   TestSuite *suite;
 
   suite = create_test_suite ();
@@ -1200,6 +1210,11 @@ main (int argc, char **argv)
   add_test_with_context (suite, jsonpull, fails_for_expand_eof);
 
   if (argc > 1)
-    return run_single_test (suite, argv[1], create_text_reporter ());
-  return run_test_suite (suite, create_text_reporter ());
+    ret = run_single_test (suite, argv[1], create_text_reporter ());
+  else
+    ret = run_test_suite (suite, create_text_reporter ());
+
+  destroy_test_suite (suite);
+
+  return ret;
 }

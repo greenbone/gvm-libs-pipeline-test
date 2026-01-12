@@ -60,7 +60,7 @@ gvm_json_pull_event_init (gvm_json_pull_event_t *event)
 void
 gvm_json_pull_event_cleanup (gvm_json_pull_event_t *event)
 {
-  cJSON_free (event->value);
+  cJSON_Delete (event->value);
   if (event->error_message)
     g_free (event->error_message);
   memset (event, 0, sizeof (gvm_json_pull_event_t));
@@ -439,7 +439,7 @@ gvm_json_pull_parse_key (gvm_json_pull_parser_t *parser,
       if (gvm_json_pull_parse_string (parser, event, &key_cjson))
         return 1;
       key_str = g_strdup (key_cjson->valuestring);
-      cJSON_free (key_cjson);
+      cJSON_Delete (key_cjson);
 
       // Expect colon:
       if (gvm_json_pull_skip_space (parser, event, FALSE))
@@ -695,20 +695,22 @@ gvm_json_pull_parser_next (gvm_json_pull_parser_t *parser,
   // Check for expected end of file
   if (parser->expect == GVM_JSON_PULL_EXPECT_EOF)
     {
-      gvm_json_pull_skip_space (parser, event, TRUE);
-
-      if (parser->last_read_char == GVM_JSON_CHAR_ERROR)
+      if (gvm_json_pull_skip_space (parser, event, TRUE))
         {
-          event->type = GVM_JSON_PULL_EVENT_ERROR;
-          event->error_message = gvm_json_read_stream_error_str ();
-        }
-      else if (parser->last_read_char != GVM_JSON_CHAR_EOF)
-        {
-          event->type = GVM_JSON_PULL_EVENT_ERROR;
-          event->error_message = g_strdup_printf (
-            "unexpected character at end of file (%d)", parser->last_read_char);
+          // EOF was reached, or an error occurred.
+          // The event type is already set, and if an error occurred, then
+          // error_message is also already set.
           return;
         }
+
+      // Skipping space succeeded. Check for unexpected characters at EOF.
+
+      if (parser->last_read_char == GVM_JSON_CHAR_EOF)
+        return;
+
+      event->type = GVM_JSON_PULL_EVENT_ERROR;
+      event->error_message = g_strdup_printf (
+        "unexpected character at end of file (%d)", parser->last_read_char);
       return;
     }
 
@@ -826,10 +828,13 @@ gvm_json_pull_expand_container (gvm_json_pull_parser_t *parser,
                   if (error_message)
                     *error_message =
                       g_strdup ("unexpected closing square bracket");
+                  gvm_json_pull_path_elem_free (path_tail);
                   return NULL;
                 }
               if (path_tail->depth == start_depth)
                 in_expanded_container = FALSE;
+
+              gvm_json_pull_path_elem_free (path_tail);
               break;
             case '}':
               path_tail = g_queue_pop_tail (parser->path);
@@ -838,10 +843,13 @@ gvm_json_pull_expand_container (gvm_json_pull_parser_t *parser,
                   if (error_message)
                     *error_message =
                       g_strdup ("unexpected closing curly brace");
+                  gvm_json_pull_path_elem_free (path_tail);
                   return NULL;
                 }
               if (path_tail->depth == start_depth)
                 in_expanded_container = FALSE;
+
+              gvm_json_pull_path_elem_free (path_tail);
               break;
             }
         }

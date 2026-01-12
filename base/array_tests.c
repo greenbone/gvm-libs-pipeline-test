@@ -20,7 +20,11 @@ AfterEach (array)
 
 Ensure (array, make_array_never_returns_null)
 {
-  assert_that (make_array (), is_not_null);
+  array_t *array;
+
+  array = make_array ();
+  assert_that (array, is_not_null);
+  array_free (array);
 }
 
 /* Test suite. */
@@ -28,6 +32,7 @@ Ensure (array, make_array_never_returns_null)
 int
 main (int argc, char **argv)
 {
+  int ret;
   TestSuite *suite;
 
   suite = create_test_suite ();
@@ -35,7 +40,11 @@ main (int argc, char **argv)
   add_test_with_context (suite, array, make_array_never_returns_null);
 
   if (argc > 1)
-    return run_single_test (suite, argv[1], create_text_reporter ());
+    ret = run_single_test (suite, argv[1], create_text_reporter ());
+  else
+    ret = run_test_suite (suite, create_text_reporter ());
 
-  return run_test_suite (suite, create_text_reporter ());
+  destroy_test_suite (suite);
+
+  return ret;
 }
