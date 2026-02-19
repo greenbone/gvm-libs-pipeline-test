@@ -32,7 +32,8 @@ jobs:
         with:
           token: ${{ secrets.GREENBONE_BOT_TOKEN }}
           repository: "greenbone/gea-pipeline"
-          ref: "main"
+          # ref: "main"
+          ref: "add-25.0-prometheus-trixie-support"
           workflow: development-packaging.yml
           inputs: '{"release-name": "${{ github.event.release.name }}", "component-repo-name-to-package": "${{ github.repository }}", "release-tag": "${{ github.event.release.tag_name }}"}'
           wait-for-completion-timeout: 10000
